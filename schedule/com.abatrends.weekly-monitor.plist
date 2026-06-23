@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ABA 排名监控 · 每周三 14:00 触发
+
+  此 plist 通过 schedule/run_monitor.sh 间接调用 monitor.py，
+  避免 launchd 默认 PATH 极简导致找不到 python3 的问题。
+
+  ── 部署步骤（在新 Mac 上）────────────────────────────────────
+  1. 修改 schedule/run_monitor.sh 里的 PROJECT_DIR 指向新机器的项目路径
+  2. 修改本文件中 run_monitor.sh 的绝对路径
+  3. 拷贝并加载：
+       cp schedule/com.abatrends.weekly-monitor.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.abatrends.weekly-monitor.plist
+  4. 手动触发一次验证：
+       launchctl start com.abatrends.weekly-monitor
+       tail -f ~/Library/Logs/aba-trends/monitor.out.log
+
+  ── 卸载 ────────────────────────────────────────────────────
+       launchctl unload ~/Library/LaunchAgents/com.abatrends.weekly-monitor.plist
+       rm ~/Library/LaunchAgents/com.abatrends.weekly-monitor.plist
+
+  ── 日志路径 ────────────────────────────────────────────────
+       ~/Library/Logs/aba-trends/monitor.out.log
+       ~/Library/Logs/aba-trends/monitor.err.log
+
+  注意：launchd 在休眠唤醒后会自动补跑错过的 StartCalendarInterval 任务。
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abatrends.weekly-monitor</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/ethan/ABA_Trends/schedule/run_monitor.sh</string>
+        <string>week</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/ethan/ABA_Trends</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>3</integer>
+        <key>Hour</key>
+        <integer>14</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/ethan/Library/Logs/aba-trends/monitor.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/ethan/Library/Logs/aba-trends/monitor.err.log</string>
+</dict>
+</plist>

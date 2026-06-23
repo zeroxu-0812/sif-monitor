@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ABA Rank Trends</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <aside class="controls">
+          <div class="brand">
+            <div class="mark">A</div>
+            <div>
+              <h1>ABA Rank Trends</h1>
+              <p>Sif 关键词排名趋势</p>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>关键词</span>
+            <textarea id="keywords" rows="8" spellcheck="false" placeholder="coffee scale&#10;milk frother&#10;espresso tamper"></textarea>
+          </label>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>粒度</span>
+              <select id="granularity">
+                <option value="week">周趋势</option>
+                <option value="month">月趋势</option>
+                <option value="all">周 + 月</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>批量</span>
+              <input id="batchSize" type="number" min="1" max="10" value="10" />
+            </label>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>开始</span>
+              <input id="startDate" type="text" placeholder="2025-01-01" />
+            </label>
+            <label class="field">
+              <span>结束</span>
+              <input id="endDate" type="text" placeholder="留空" />
+            </label>
+          </div>
+
+          <button id="runButton" class="primary-button" type="button">
+            <span class="button-icon">↻</span>
+            <span>查询趋势</span>
+          </button>
+
+          <div id="status" class="status">等待查询</div>
+        </aside>
+
+        <section class="analysis">
+          <header class="topbar">
+            <div>
+              <div id="rangeLabel" class="range-label">无数据</div>
+              <h2 id="chartTitle">ABA 排名走势</h2>
+            </div>
+            <div class="toolbar" role="group" aria-label="图表视图">
+              <button class="tool active" data-view="line" type="button" title="折线趋势">⌁</button>
+              <button class="tool" data-view="bar" type="button" title="最新排名">▥</button>
+              <button class="tool" data-view="heatmap" type="button" title="排名热力">▦</button>
+            </div>
+          </header>
+
+          <div class="tabs" id="tabs">
+            <button class="tab active" data-granularity="week" type="button">周</button>
+            <button class="tab" data-granularity="month" type="button">月</button>
+          </div>
+
+          <section class="metrics" id="metrics"></section>
+          <section class="chart-surface">
+            <div id="chart"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

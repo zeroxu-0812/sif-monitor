@@ -1,0 +1,29 @@
+# 敏感凭据（.env 含真实 SIF/飞书凭据）
+.env
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Sif 本地缓存（cookie / token，等于长效凭据）
+.sif_cookie_cache
+.sif_token_cache
+
+# 同步断点续传
+sif_sync_checkpoint.json
+
+# Claude Code 工作目录（含本地计划/记忆）
+.claude/
+
+# 项目内 todo / 经验记录（开发过程产物，不入仓库）
+todo.md
+lessons.md
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
