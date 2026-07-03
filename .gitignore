@@ -27,3 +27,9 @@ lessons.md
 # IDE
 .vscode/
 .idea/
+
+# ABA / Funnel 数据导出（CSV / XLSX，分析产物，不入仓库）
+aba_ranks_*.csv
+aba_ranks_*.xlsx
+funnel_*.csv
+funnel_*.xlsx

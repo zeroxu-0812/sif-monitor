@@ -35,6 +35,7 @@ ABA_Trends/
 |--------|------|----------|------|
 | **数据同步** | 手动 / 调度 | `sif_feishu_sync.py` | 从 Sif API 抓周/月排名，写入飞书表 |
 | **排名监控** | 每周三 14:00 | `monitor.py` | 读飞书表 → 算指标 → 推送飞书群聊 |
+| **Funnel 查询** | 手动 | `sif_keyword_funnel.py` | 查关键词 CPC / 搜索量 / 转化率 + 搜索量加权综合指标 |
 | **本地可视化** | 手动 | `aba_trend_viewer/server.py` | 本地浏览器查看单关键词趋势 |
 
 监控链路依赖同步链路：**先跑 `sif_feishu_sync.py` 同步最新数据，`monitor.py` 才能看到最新一期排名**。建议两个脚本一起调度（同步在前，监控在后）。
@@ -72,7 +73,7 @@ rank > 30,000 忽略。
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/Oceanwing-IDC/sif_aba.git ABA_Trends
+git clone https://github.com/Oceanwing-IDC/about-sif.git ABA_Trends
 cd ABA_Trends
 ```
 
@@ -163,6 +164,26 @@ python3 aba_trend_viewer/server.py
 python3 auth.py --check           # 用缓存
 python3 auth.py --check --force-login   # 强制重新登录
 ```
+
+### Funnel 数据查询（CPC / 转化率）
+
+```bash
+# 单词（API 会顺带返回 87 个相关市场词）
+python3 sif_keyword_funnel.py --keywords "magnesium cream"
+
+# 多词（严格按输入返回）+ exact/broad 双策略
+python3 sif_keyword_funnel.py --keywords "vitamin d3 k2,d3 k2" --strategy both
+
+# 从文件读关键词
+python3 sif_keyword_funnel.py --keywords-file keywords.txt
+
+# 输出：
+# - funnel_<strategy>_<ts>.csv  原始字段（CPC / 搜索量 / 转化率 / TopASIN 等 36 列）
+# - funnel_<ts>.xlsx            多 sheet 工作簿
+# - funnel_summary_<strategy>_<ts>.csv  搜索量加权综合指标（每词权重 + 合计行）
+```
+
+默认 CPC 桶为 `legacyForSales_exact`，可用 `--cpc-match` 切换其他 5 种匹配类型对比。
 
 ## 定时部署（部署到另一台 Mac）
 
