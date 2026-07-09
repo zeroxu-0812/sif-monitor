@@ -7,12 +7,20 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Python 虚拟环境（体积大，不入库）
+.venv/
+venv/
+env/
+
 # Sif 本地缓存（cookie / token，等于长效凭据）
 .sif_cookie_cache
 .sif_token_cache
 
 # 同步断点续传
 sif_sync_checkpoint.json
+
+# 监控结果表 spreadsheet_token 缓存（运行期生成，含表格 token，不入库）
+.feishu_report_state.json
 
 # Claude Code 工作目录（含本地计划/记忆）
 .claude/
@@ -28,8 +36,10 @@ lessons.md
 .vscode/
 .idea/
 
-# ABA / Funnel 数据导出（CSV / XLSX，分析产物，不入仓库）
+# 数据导出（CSV / XLSX，分析产物，不入仓库）
 aba_ranks_*.csv
 aba_ranks_*.xlsx
 funnel_*.csv
 funnel_*.xlsx
+amount_*.csv
+amount_*.xlsx

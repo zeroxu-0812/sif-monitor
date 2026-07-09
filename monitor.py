@@ -112,6 +112,27 @@ def _read_rank_matrix(
     return dates, rows
 
 
+def _load_active_keywords(client: FeishuClient, spreadsheet_token: str) -> set[str]:
+    """读取关键词表第一列，返回现存关键词集合（小写）。
+
+    monitor 只读趋势表；用户在关键词表删/改词后，趋势表里被删的词不会自动
+    消失。用此集合过滤趋势表残留词，使"删词即生效"。趋势表历史数据保留不动。
+    """
+    sheet_id = feishu_config.KEYWORDS_SHEET_ID
+    info = client.get_sheet_info(spreadsheet_token, sheet_id)
+    row_count = int(info.get("grid_properties", {}).get("row_count", 0))
+    if row_count == 0:
+        return set()
+    values = client.read_range(spreadsheet_token, sheet_id, f"A1:A{row_count}")
+    keywords: set[str] = set()
+    for row in values[1:]:  # 跳过表头
+        if row and row[0] is not None:
+            text = str(row[0]).strip().lower()
+            if text:
+                keywords.add(text)
+    return keywords
+
+
 # ============================================================================
 # 数据范围计算
 # ============================================================================
@@ -158,7 +179,13 @@ def run(
     client = FeishuClient(feishu_config.FEISHU_APP_ID, feishu_config.FEISHU_APP_SECRET)
     spreadsheet_token = client.get_spreadsheet_token(feishu_config.TRENDS_WIKI_TOKEN)
     dates, raw_rows = _read_rank_matrix(client, spreadsheet_token, sheet_id)
-    print(f"      读取到 {len(raw_rows)} 个关键词，{len(dates)} 期数据")
+    # 用关键词表过滤：只保留关键词表里现存的词（趋势表里被删词的残留会被剔除）
+    active_keywords = _load_active_keywords(client, spreadsheet_token)
+    raw_rows = [
+        (kw, ranks) for kw, ranks in raw_rows
+        if kw.strip().lower() in active_keywords
+    ]
+    print(f"      读取到 {len(raw_rows)} 个关键词（关键词表现存 {len(active_keywords)} 个，已过滤残留），{len(dates)} 期数据")
 
     print("[2/4] 计算指标")
     metrics = [

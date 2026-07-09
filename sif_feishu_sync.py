@@ -38,6 +38,13 @@ FEISHU_VALUES_UPDATE_URL = "https://open.feishu.cn/open-apis/sheets/v2/spreadshe
 FEISHU_DIMENSION_RANGE_URL = (
     "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/{token}/dimension_range"
 )
+FEISHU_CREATE_SPREADSHEET_URL = "https://open.feishu.cn/open-apis/sheets/v3/spreadsheets"
+FEISHU_BATCH_UPDATE_SHEETS_URL = (
+    "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/{token}/sheets_batch_update"
+)
+FEISHU_STYLE_URL = (
+    "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/{token}/style"
+)
 MAX_KEYWORDS_PER_BATCH = 10
 DEFAULT_CHECKPOINT_FILE = Path("sif_sync_checkpoint.json")
 
@@ -190,6 +197,105 @@ class FeishuClient:
             headers={**self._headers(), "Content-Type": "application/json"},
             json=payload,
         )
+
+    def set_cell_styles(self, spreadsheet_token, sheet_id, style_ranges):
+        """批量设置单元格数字格式（用于价格→货币、比率→百分比）。
+
+        Args:
+            style_ranges: list[dict]，每个 {
+                "start_row", "end_row": 行半开区间（0 = 表头行），
+                "start_col", "end_col": 列半开区间（0 = A 列），
+                "type":   "CURRENCY" / "PERCENT" / ...,
+                "pattern": "$#,##0.00" / "0.00%" / ...,
+            }
+        """
+        if not style_ranges:
+            return
+        url = FEISHU_STYLE_URL.format(token=spreadsheet_token)
+        data = [
+            {
+                "sheetId": sheet_id,
+                "startRowIndex": r["start_row"],
+                "endRowIndex": r["end_row"],
+                "startColumnIndex": r["start_col"],
+                "endColumnIndex": r["end_col"],
+                "style": {
+                    "numberFormat": {"type": r["type"], "pattern": r["pattern"]}
+                },
+            }
+            for r in style_ranges
+        ]
+        self._request(
+            "PUT",
+            url,
+            headers={**self._headers(), "Content-Type": "application/json"},
+            json={"data": data},
+        )
+
+    def set_range_formatter(self, spreadsheet_token, sheet_id, range_str, formatter):
+        """设置某范围的数字格式（货币 $#,##0.00 / 百分比 0.00% 等）。
+
+        飞书设置样式的正确请求体是 appendStyle（PUT /style）：
+          {"appendStyle": {"range": "<sheet>!A1:B2", "style": {"formatter": "..."}}}
+        range_str 为不含 sheet_id 的范围，如 'G2:G55'。
+        """
+        url = FEISHU_STYLE_URL.format(token=spreadsheet_token)
+        body = {
+            "appendStyle": {
+                "range": f"{sheet_id}!{range_str}",
+                "style": {"formatter": formatter},
+            }
+        }
+        self._request(
+            "PUT",
+            url,
+            headers={**self._headers(), "Content-Type": "application/json"},
+            json=body,
+        )
+
+    def create_spreadsheet(self, title, folder_token=None):
+        """新建电子表格。folder_token 为 None 时建在应用根目录。
+
+        返回 {"spreadsheet_token", "url", "title"}。
+        """
+        body = {"title": title}
+        if folder_token:
+            body["folder_token"] = folder_token
+        data = self._request(
+            "POST",
+            FEISHU_CREATE_SPREADSHEET_URL,
+            headers={**self._headers(), "Content-Type": "application/json"},
+            json=body,
+        )
+        spreadsheet = data["data"]["spreadsheet"]
+        return {
+            "spreadsheet_token": spreadsheet["spreadsheet_token"],
+            "url": spreadsheet.get("url", ""),
+            "title": spreadsheet.get("title", title),
+        }
+
+    def create_sheet(self, spreadsheet_token, title, index=0):
+        """在电子表格中新建工作表，index 默认 0（插在最前，让最新一期默认可见）。
+
+        返回 {"sheet_id", "title", "index"}。
+        """
+        body = {
+            "requests": [
+                {"addSheet": {"properties": {"title": title, "index": index}}}
+            ]
+        }
+        data = self._request(
+            "POST",
+            FEISHU_BATCH_UPDATE_SHEETS_URL.format(token=spreadsheet_token),
+            headers={**self._headers(), "Content-Type": "application/json"},
+            json=body,
+        )
+        props = data["data"]["replies"][0]["addSheet"]["properties"]
+        return {
+            "sheet_id": props["sheetId"],
+            "title": props.get("title", title),
+            "index": props.get("index", index),
+        }
 
 
 def col_index_to_name(index):

@@ -19,12 +19,22 @@ def _require_env(name: str) -> str:
     return value
 
 
+def _optional_env(name: str) -> str | None:
+    """读取可选环境变量，缺失或为空时返回 None（不报错）。"""
+    value = os.getenv(name, "").strip()
+    return value or None
+
+
 # ============================================================================
 # 飞书 API 凭据（从 .env 读取）
 # ============================================================================
 
 FEISHU_APP_ID = _require_env("FEISHU_APP_ID")
 FEISHU_APP_SECRET = _require_env("FEISHU_APP_SECRET")
+
+# 监控结果表存放文件夹（可选，留空则建在应用根目录）
+# 从飞书云文档文件夹 URL 末段取，如 https://xxx.feishu.cn/drive/folder/fldbcO1... 的 fldbcO1...
+FEISHU_REPORT_FOLDER_TOKEN = _optional_env("FEISHU_REPORT_FOLDER_TOKEN")
 
 
 # ============================================================================
@@ -47,6 +57,10 @@ TRENDS_SHEET_ID_WEEKLY = "csSwu0"
 
 # 月趋势数据写入的工作表 ID
 TRENDS_SHEET_ID_MONTHLY = "hzQkaQ"
+
+# Funnel 结果输出到的 spreadsheet（wiki 链接；与趋势表共用同一个表，应用已有权限）
+# 用于 sif_keyword_funnel.py --push-feishu：在该表里建新工作表存 funnel 结果
+FUNNEL_SPREADSHEET_WIKI_URL = "https://nxx2pqvw7t.feishu.cn/wiki/Dz9PwV7MWi1qgFkLQ2ycpX1ynHd"
 
 
 # ============================================================================

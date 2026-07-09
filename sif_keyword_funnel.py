@@ -36,6 +36,26 @@ STRATEGY_MAP = {
 }
 ALL_STRATEGIES = ["exact", "broad"]
 
+# Funnel 桶字段（接口返回 dict: {matchType: [{start, median, end, ...}]}）→ 额外拍平出的数值列。
+# 原始 JSON 列保留，这些数值列便于查看与排序（价格=美元数值、比率=0~1 小数，靠单元格格式呈现 $/%）。
+FUNNEL_BUCKET_FIELDS = ["cpc", "cpa", "acos", "profitRate"]
+FUNNEL_NUMERIC_COLS = [
+    "cpc_start", "cpc_median", "cpc_end",
+    "cpa_start", "cpa_median", "cpa_end",
+    "acos_start", "acos_median", "acos_end",
+    "profitRate_start", "profitRate_median", "profitRate_end",
+    "asinsCvr_top1", "asinsCvr_top2", "asinsCvr_top3",
+]
+PRICE_COLS = {
+    "cpc_start", "cpc_median", "cpc_end",
+    "cpa_start", "cpa_median", "cpa_end",
+}
+RATIO_COLS = {
+    "acos_start", "acos_median", "acos_end",
+    "profitRate_start", "profitRate_median", "profitRate_end",
+    "asinsCvr_top1", "asinsCvr_top2", "asinsCvr_top3",
+}
+
 
 def fetch_keyword_funnel(
     keywords,
@@ -114,8 +134,11 @@ def fetch_keyword_funnel(
 
 def flatten_record(rec, top_asin_count=3):
     """
-    把单条记录拍平成一行 dict（含 topAsins 前 N 个 ASIN 拆列）。
-    topAsins 之外的嵌套对象保留为 JSON 字符串。
+    把单条记录拍平成一行 dict。
+    - topAsins 前 N 个 ASIN 拆列，完整列表存 topAsins_json
+    - cpc/cpa/acos/profitRate/asinsClickPurchaseRatio 原始 JSON 列保留
+    - 额外按查询 strategy 取对应桶，拍平出数值列（价格=美元、比率=0~1 小数），
+      便于查看与排序；缺失桶留空（None）
     """
     flat = {}
     for key, value in rec.items():
@@ -129,6 +152,19 @@ def flatten_record(rec, top_asin_count=3):
             flat[key] = json.dumps(value, ensure_ascii=False)
         else:
             flat[key] = value
+
+    # 额外拍平 funnel 桶字段为数值列（保留上面的 JSON 列不变）
+    bucket_key = STRATEGY_MAP.get(rec.get("strategy") or "exact", "legacyForSales_exact")
+    for field in FUNNEL_BUCKET_FIELDS:
+        bucket = (rec.get(field) or {}).get(bucket_key) or []
+        first = bucket[0] if bucket else {}
+        flat[f"{field}_start"] = first.get("start")
+        flat[f"{field}_median"] = first.get("median")
+        flat[f"{field}_end"] = first.get("end")
+    acpr = rec.get("asinsClickPurchaseRatio") or []
+    for i in range(1, 4):
+        item = acpr[i - 1] if i - 1 < len(acpr) else {}
+        flat[f"asinsCvr_top{i}"] = item.get("clickPurchaseRatio")
     return flat
 
 
@@ -167,7 +203,13 @@ def collect_columns(records):
                     seen.add(k)
                 break
 
-    # 再补所有 record 出现过、但不在 priority 里的字段（除 topAsins 单独处理）
+    # funnel 数值列（固定顺序，紧跟业务主指标；JSON 原始列保留在后面）
+    for k in FUNNEL_NUMERIC_COLS:
+        if k not in seen:
+            cols.append(k)
+            seen.add(k)
+
+    # 再补所有 record 出现过、但不在 priority 里的字段（含 cpc/cpa/acos 等 JSON 原始列；除 topAsins 单独处理）
     for rec in records:
         for k in rec.keys():
             if k in ("topAsins",):
@@ -225,6 +267,10 @@ def write_xlsx(path, sheets):
             for c_idx, col in enumerate(columns, 1):
                 cell = ws.cell(row=r_idx, column=c_idx, value=flat.get(col, ""))
                 cell.alignment = Alignment(horizontal="center", vertical="center")
+                if col in PRICE_COLS:
+                    cell.number_format = '$#,##0.00'
+                elif col in RATIO_COLS:
+                    cell.number_format = '0.00%'
 
         ws.freeze_panes = "B2"
         ws.column_dimensions["A"].width = 28
@@ -400,6 +446,11 @@ def parse_args(argv=None):
     parser.add_argument("--delay", type=float, default=sif_config.DEFAULT_DELAY)
     parser.add_argument("--out-dir", default=str(PROJECT_DIR), help="输出目录")
     parser.add_argument("--no-xlsx", action="store_true", help="不生成 xlsx，只导出 CSV")
+    parser.add_argument(
+        "--push-feishu",
+        action="store_true",
+        help="把结果写入飞书 spreadsheet 新工作表 + 群发链接卡片（用项目飞书应用）",
+    )
     return parser.parse_args(argv)
 
 
@@ -493,6 +544,52 @@ def main(argv=None):
             write_weighted_summary(summary_csv, summary, strat)
             print(f"  明细表: {summary_csv}")
             print()
+
+        # 推送到飞书 spreadsheet + 群链接（--push-feishu）
+        if args.push_feishu:
+            from feishu_report import build_funnel_link_card, publish_funnel_to_sheet
+            from feishu_messenger import FeishuMessenger
+            from sif_feishu_sync import FeishuClient
+            import feishu_config
+            import monitor_config as mcfg
+
+            feishu_client = FeishuClient(
+                feishu_config.FEISHU_APP_ID, feishu_config.FEISHU_APP_SECRET
+            )
+            spreadsheet_token = feishu_client.get_spreadsheet_token(
+                feishu_config.TRENDS_WIKI_TOKEN
+            )
+            spreadsheet_url = feishu_config.FUNNEL_SPREADSHEET_WIKI_URL
+
+            generated_at = datetime.now()
+            report = publish_funnel_to_sheet(
+                feishu_client,
+                spreadsheet_token,
+                spreadsheet_url,
+                records=records,
+                query_keywords=keywords,
+                strategy=strat,
+                generated_at=generated_at,
+            )
+            print(
+                f"[{strat}] 写入飞书 sheet: {report['sheet_title']} "
+                f"({report['rows']}行 x {report['cols']}列)"
+            )
+            print(f"      表格链接: {report['url']}")
+
+            card = build_funnel_link_card(
+                query_keywords=keywords,
+                strategy=strat,
+                record_count=report["record_count"],
+                summary=summary or {},
+                report_url=report["url"],
+                generated_at=generated_at,
+            )
+            messenger = FeishuMessenger(
+                feishu_config.FEISHU_APP_ID, feishu_config.FEISHU_APP_SECRET
+            )
+            resp = messenger.send_card(mcfg.CHAT_ID, card)
+            print(f"[{strat}] ✅ 群发链接: code={resp.get('code')} msg={resp.get('msg')}")
 
     if not args.no_xlsx and all_records_by_strategy:
         xlsx_path = out_dir / f"funnel_{ts}.xlsx"

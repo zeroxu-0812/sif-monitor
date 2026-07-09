@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sif cpc_median 周监控 · 每周一 10:00 触发
+
+  此 plist 通过 schedule/run_weekly_cpc.sh 间接调用 sif_weekly_cpc_monitor.py，
+  向 ssFow6 趋势表追加/覆盖 funnel period 当周的 cpc_median 列。
+  用 .venv/bin/python（项目依赖在 venv 里），避开 launchd 默认极简 PATH。
+
+  ── 部署步骤（在新 Mac 上）────────────────────────────────────
+  1. 修改 schedule/run_weekly_cpc.sh 里的 PROJECT_DIR 指向新机器的项目路径
+  2. 修改本文件中 run_weekly_cpc.sh 与 WorkingDirectory 的绝对路径
+  3. 拷贝并加载：
+       cp schedule/com.abatrends.weekly-cpc.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.abatrends.weekly-cpc.plist
+  4. 手动触发一次验证：
+       launchctl start com.abatrends.weekly-cpc
+       tail -f ~/Library/Logs/aba-trends/weekly-cpc.out.log
+
+  ── 卸载 ────────────────────────────────────────────────────
+       launchctl unload ~/Library/LaunchAgents/com.abatrends.weekly-cpc.plist
+       rm ~/Library/LaunchAgents/com.abatrends.weekly-cpc.plist
+
+  ── 日志路径 ────────────────────────────────────────────────
+       ~/Library/Logs/aba-trends/weekly-cpc.out.log
+       ~/Library/Logs/aba-trends/weekly-cpc.err.log
+
+  注意：launchd 在休眠唤醒后会自动补跑错过的 StartCalendarInterval 任务。
+        Weekday: 1=周一 … 7=周日。
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/Property-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abatrends.weekly-cpc</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/haiyi/Desktop/project/about-sif-main/schedule/run_weekly_cpc.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/haiyi/Desktop/project/about-sif-main</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/haiyi/Library/Logs/aba-trends/weekly-cpc.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/haiyi/Library/Logs/aba-trends/weekly-cpc.err.log</string>
+</dict>
+</plist>
