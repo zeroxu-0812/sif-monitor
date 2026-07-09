@@ -50,7 +50,7 @@ if [[ ! -x "$PYTHON" ]]; then
 fi
 
 # 跑监控（捕获异常退出码）
-if ! "$PYTHON" "$PROJECT_DIR/sif_weekly_cpc_monitor.py" >> "$OUT_LOG" 2>> "$ERR_LOG"; then
+if ! "$PYTHON" "$PROJECT_DIR/sif_weekly_cpc_monitor.py" --push-card >> "$OUT_LOG" 2>> "$ERR_LOG"; then
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] sif_weekly_cpc_monitor.py exited non-zero" >> "$ERR_LOG"
     exit 1
 fi

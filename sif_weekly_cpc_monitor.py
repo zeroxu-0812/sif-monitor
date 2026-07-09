@@ -27,13 +27,14 @@ PROJECT_DIR = Path(__file__).resolve().parent
 load_dotenv(PROJECT_DIR / ".env")
 
 import feishu_config
-import monitor_config as mcfg
 import sif_keyword_funnel as skf
 from feishu_messenger import FeishuMessenger, _hr, _markdown_div
 from sif_feishu_sync import FeishuClient, col_index_to_name
 
 # 监控目标工作表（多类目关键词趋势表）
 WEEKLY_CPC_SHEET_ID = "ssFow6"
+# 周报卡片推送目标群（与 funnel 等测试项目分开：那些仍用 monitor_config.CHAT_ID 原群）
+WEEKLY_CPC_CHAT_ID = "oc_5e077fd93310f6ce8de57e9f4a566bd8"
 CATEGORY_COLUMN = 0   # A 列（0-based）
 KEYWORD_COLUMN = 1    # B 列（0-based）
 
@@ -270,7 +271,7 @@ def main(argv=None):
     # 5. 推送飞书（可选）
     if args.push_card:
         messenger = FeishuMessenger(feishu_config.FEISHU_APP_ID, feishu_config.FEISHU_APP_SECRET)
-        resp = messenger.send_card(mcfg.CHAT_ID, card)
+        resp = messenger.send_card(WEEKLY_CPC_CHAT_ID, card)
         print(f"\n[5/5] ✅ 卡片已推送: code={resp.get('code')} msg={resp.get('msg')}")
     else:
         print("\n[5/5] 未推送（加 --push-card 才发飞书）")
