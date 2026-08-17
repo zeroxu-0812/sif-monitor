@@ -1,0 +1,5 @@
+# 运行时依赖（与 .venv 中实测版本对齐）
+requests>=2.32
+python-dotenv>=1.0
+openpyxl>=3.1
+lark-oapi>=1.7

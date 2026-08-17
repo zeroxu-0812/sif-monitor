@@ -79,11 +79,15 @@ cd ABA_Trends
 
 ### 2. 安装 Python 依赖
 
-项目只用 `requests` 和 `python-dotenv`：
-
 ```bash
-pip3 install requests python-dotenv
+# 建议用虚拟环境
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+# 如需运行单元测试，追加开发依赖（pytest）
+.venv/bin/pip install -r requirements-dev.txt
 ```
+
+运行时依赖：`requests` / `python-dotenv` / `openpyxl` / `lark-oapi`（清单见 `requirements.txt`）。
 
 ### 3. 配置凭据
 
@@ -208,7 +212,7 @@ PROJECT_DIR="/Users/新用户名/ABA_Trends"
 
 这个脚本会自动：
 - cd 到项目目录
-- 选择合适的 python3（homebrew → 系统）
+- 选择合适的 python（项目 `.venv` → homebrew → 系统）
 - 写日志到 `~/Library/Logs/aba-trends/`
 
 ### 步骤 3：修改 plist 里的两处绝对路径
@@ -279,6 +283,10 @@ rm ~/Library/LaunchAgents/com.abatrends.weekly-monitor.plist
 ```
 
 间隔 5 小时，确保同步完成后再做监控推送。
+
+另有独立的 CPC 周监控任务 `schedule/com.abatrends.weekly-cpc.plist`（每周一
+10:00，向 ssFow6 趋势表追加 cpc 周列并推送类目汇总卡片），不依赖同步/监控链路，
+详见 `openspec/specs/cpc-weekly-monitor/spec.md`。
 
 ## 故障排查
 

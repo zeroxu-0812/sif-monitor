@@ -2,7 +2,7 @@
 #
 # Sif cpc_median 周监控启动脚本（launchd 调用入口）
 #
-# 每周一 10:00 触发：读 ssFow6 的 B 列关键词，查 funnel cpc_median，
+# StartInterval 每 30 分钟唤醒；脚本内部判断周四 10 点才执行，
 # 按当周 period 追加/覆盖对应周列。
 #
 # 部署到新机器时：只需修改下面的 PROJECT_DIR 即可。
@@ -10,6 +10,25 @@
 #
 
 set -euo pipefail
+
+# ============================================================================
+# 调度守卫：仅周一 10:00-10:59 执行，其余时间静默退出
+# （绕过 macOS 15.x StartCalendarInterval 时区 bug）
+# ============================================================================
+
+GUARD_DOW="${SCHEDULE_DOW:-1}"     # 1=周一（date +%u）
+GUARD_HOUR="${SCHEDULE_HOUR:-10}"  # 目标小时
+LOCK_FILE="/tmp/abatrends-weekly-cpc-$(date +%Y%m%d).lock"
+
+if [[ "$(date +%u)" != "$GUARD_DOW" || "$(date +%H)" != "$GUARD_HOUR" ]]; then
+    exit 0
+fi
+if [[ -f "$LOCK_FILE" ]]; then
+    exit 0
+fi
+touch "$LOCK_FILE"
+trap 'rm -f "$LOCK_FILE"' EXIT
+
 
 # ============================================================================
 # 部署配置（按实际路径修改）

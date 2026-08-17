@@ -108,6 +108,7 @@ class FeishuClient:
         self.app_id = app_id
         self.app_secret = app_secret
         self._tenant_access_token = None
+        self._token_expires_at = 0.0
 
     def _request(self, method, url, **kwargs):
         payload = request_json(method, url, timeout=30, **kwargs)
@@ -118,12 +119,16 @@ class FeishuClient:
         return payload
 
     def get_tenant_access_token(self):
-        if self._tenant_access_token:
+        # 缓存 token 并记录过期时间（飞书 tenant_access_token 默认 2 小时），
+        # 提前 5 分钟刷新，避免长批量任务中途 token 过期导致 401。
+        if self._tenant_access_token and time.time() < self._token_expires_at:
             return self._tenant_access_token
 
         payload = {"app_id": self.app_id, "app_secret": self.app_secret}
         data = self._request("POST", FEISHU_TENANT_TOKEN_URL, json=payload)
         self._tenant_access_token = data["tenant_access_token"]
+        expire = int(data.get("expire", 2 * 60 * 60))
+        self._token_expires_at = time.time() + max(expire - 5 * 60, 60)
         return self._tenant_access_token
 
     def _headers(self):
@@ -141,7 +146,11 @@ class FeishuClient:
                 headers=self._headers(),
             )
             return data["data"]["spreadsheet"]["token"]
-        except Exception:
+        except requests.RequestException:
+            # 网络/HTTP 层错误不掩盖，直接抛出，避免静默返回错误 token
+            raise
+        except (RuntimeError, KeyError):
+            # token 无效或响应结构不符（可能是 wiki token），按原样返回交给后续处理
             return token_like
 
     def read_range(self, spreadsheet_token, sheet_id, range_str):
@@ -324,11 +333,11 @@ def normalize_keywords(values, keyword_column=0, skip_header=True):
     return keywords
 
 
-def fetch_trends_batch(keywords, granularity):
+def fetch_trends_batch(keywords, granularity, _force_login=False):
     if not keywords:
         return {}
 
-    token = auth.get_token()
+    token = auth.get_token(force_login=_force_login)
     payload = {"keywords": keywords[:MAX_KEYWORDS_PER_BATCH], "granularity": granularity}
     params = auth.build_sif_query_params(country="US")
     headers = {
@@ -347,6 +356,12 @@ def fetch_trends_batch(keywords, granularity):
     )
 
     if data.get("code") != 1:
+        # code=-7 = 鉴权失效（token 中途过期）。强制重登拿新 token 重试一次，
+        # 对齐 auth.api_post 的 _needs_auth_retry 自愈模式。fetch_trends_batch 走
+        # new.sif.com 绕过了 api_post，原本缺这层重试，长批量跑到中途会崩。
+        if data.get("code") == -7 and not _force_login:
+            print("  token 失效(code=-7)，强制重登后重试本批")
+            return fetch_trends_batch(keywords, granularity, _force_login=True)
         raise RuntimeError(
             f"Sif 趋势接口失败: code={data.get('code')} msg={data.get('message') or data.get('msg')}"
         )
@@ -443,7 +458,11 @@ def filter_trends_by_start_date(trends_data, start_date_str, date_format):
         kept_ranks = []
 
         for idx, date_value in enumerate(dates):
-            parsed_date = datetime.strptime(str(date_value), date_format)
+            try:
+                parsed_date = datetime.strptime(str(date_value), date_format)
+            except (ValueError, TypeError):
+                # 日期格式异常时跳过，避免单个脏数据拖垮整批同步
+                continue
             if parsed_date < start_date:
                 continue
 

@@ -42,15 +42,8 @@
     <key>WorkingDirectory</key>
     <string>/Users/haiyi/Desktop/project/about-sif-main</string>
 
-    <key>StartCalendarInterval</key>
-    <dict>
-        <key>Weekday</key>
-        <integer>1</integer>
-        <key>Hour</key>
-        <integer>10</integer>
-        <key>Minute</key>
-        <integer>0</integer>
-    </dict>
+    <key>StartInterval</key>
+    <integer>1800</integer>
 
     <key>RunAtLoad</key>
     <false/>

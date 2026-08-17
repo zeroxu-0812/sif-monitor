@@ -263,6 +263,10 @@ def _save_cookie_cache(session_cookies: dict, ttl_seconds: int = CACHE_TTL_SECON
         ),
         encoding="utf-8",
     )
+    try:
+        CACHE_FILE.chmod(0o600)
+    except OSError:
+        pass
 
 
 def _load_token_cache() -> str | None:
@@ -296,6 +300,10 @@ def _save_token_cache(token: str, ttl_seconds: int = CACHE_TTL_SECONDS) -> None:
         ),
         encoding="utf-8",
     )
+    try:
+        TOKEN_CACHE_FILE.chmod(0o600)
+    except OSError:
+        pass
 
 
 def _resolve_cached_or_env_token() -> str | None:

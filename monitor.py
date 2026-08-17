@@ -23,11 +23,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# auth 在导入时会 load_dotenv，必须在 feishu_config 之前完成
+# auth 在导入时会 load_dotenv（feishu_config 现也自带 load_dotenv，可独立 import）
 import auth  # noqa: F401  - 副作用：加载 .env
 import feishu_config
 import monitor_config as cfg
-from feishu_messenger import FeishuMessenger, build_monitor_card
+from feishu_messenger import FeishuMessenger, build_monitor_card, send_failure_alert
 from rank_metrics import (
     compute_keyword_metrics,
     select_top_per_tier,
@@ -273,6 +273,7 @@ def main() -> int:
         return 2
     except Exception as exc:
         print(f"\n❌ 执行失败: {exc}", file=sys.stderr)
+        send_failure_alert(cfg.CHAT_ID, "monitor.py", exc)
         return 1
 
 

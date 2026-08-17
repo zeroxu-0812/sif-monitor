@@ -7,6 +7,13 @@
 """
 
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# 模块级加载 .env，使本模块可独立 import，避免依赖「先 import auth 才能读到 .env」
+# 的脆弱顺序耦合（load_dotenv 幂等，不会覆盖已存在的环境变量）。
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 
 def _require_env(name: str) -> str:
@@ -41,8 +48,10 @@ FEISHU_REPORT_FOLDER_TOKEN = _optional_env("FEISHU_REPORT_FOLDER_TOKEN")
 # 关键词表格配置（读取关键词列表）
 # ============================================================================
 
-KEYWORDS_WIKI_TOKEN = "Dz9PwV7MWi1qgFkLQ2ycpX1ynHd"     # ← 填写关键词表格的 Wiki Token
-KEYWORDS_SHEET_ID = "f4763f"       # ← 填写关键词所在工作表的 Sheet ID
+# 以下 token / sheet_id 为数据位置标识（非密码），默认值保留现有表，
+# 可在 .env 中覆盖以适配换环境/换表，无需改动源码。
+KEYWORDS_WIKI_TOKEN = _optional_env("KEYWORDS_WIKI_TOKEN") or "Dz9PwV7MWi1qgFkLQ2ycpX1ynHd"
+KEYWORDS_SHEET_ID = _optional_env("KEYWORDS_SHEET_ID") or "f4763f"
 
 
 # ============================================================================
@@ -50,17 +59,20 @@ KEYWORDS_SHEET_ID = "f4763f"       # ← 填写关键词所在工作表的 Sheet
 # ============================================================================
 
 # 趋势表格的 Wiki Token（可以和关键词表格是同一个表格）
-TRENDS_WIKI_TOKEN = "Dz9PwV7MWi1qgFkLQ2ycpX1ynHd"
+TRENDS_WIKI_TOKEN = _optional_env("TRENDS_WIKI_TOKEN") or "Dz9PwV7MWi1qgFkLQ2ycpX1ynHd"
 
 # 周趋势数据写入的工作表 ID
-TRENDS_SHEET_ID_WEEKLY = "csSwu0"
+TRENDS_SHEET_ID_WEEKLY = _optional_env("TRENDS_SHEET_ID_WEEKLY") or "csSwu0"
 
 # 月趋势数据写入的工作表 ID
-TRENDS_SHEET_ID_MONTHLY = "hzQkaQ"
+TRENDS_SHEET_ID_MONTHLY = _optional_env("TRENDS_SHEET_ID_MONTHLY") or "hzQkaQ"
 
 # Funnel 结果输出到的 spreadsheet（wiki 链接；与趋势表共用同一个表，应用已有权限）
 # 用于 sif_keyword_funnel.py --push-feishu：在该表里建新工作表存 funnel 结果
-FUNNEL_SPREADSHEET_WIKI_URL = "https://nxx2pqvw7t.feishu.cn/wiki/Dz9PwV7MWi1qgFkLQ2ycpX1ynHd"
+FUNNEL_SPREADSHEET_WIKI_URL = (
+    _optional_env("FUNNEL_SPREADSHEET_WIKI_URL")
+    or "https://nxx2pqvw7t.feishu.cn/wiki/Dz9PwV7MWi1qgFkLQ2ycpX1ynHd"
+)
 
 
 # ============================================================================

@@ -321,3 +321,35 @@ def build_monitor_card(
         },
         "elements": elements,
     }
+
+
+def send_failure_alert(chat_id: str, task_name: str, error: object) -> bool:
+    """向 chat_id 发送一条失败告警卡片（尽力而为）。
+
+    告警本身失败（如飞书 token 失效、网络不通）时仅返回 False、不抛出异常，
+    避免在错误处理路径上再叠加异常、掩盖原始错误。
+    """
+    import feishu_config
+
+    try:
+        messenger = FeishuMessenger(
+            feishu_config.FEISHU_APP_ID, feishu_config.FEISHU_APP_SECRET
+        )
+        card = {
+            "config": {"wide_screen_mode": True},
+            "header": {
+                "title": {"tag": "plain_text", "content": "⚠️ ABA 监控任务执行失败"},
+                "template": "red",
+            },
+            "elements": [
+                _markdown_div(
+                    f"任务：**{task_name}**\n"
+                    f"错误：`{error}`\n"
+                    f"时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                ),
+            ],
+        }
+        messenger.send_card(chat_id, card)
+        return True
+    except Exception:
+        return False

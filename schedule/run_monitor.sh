@@ -12,7 +12,7 @@ set -euo pipefail
 # 部署配置（按实际路径修改）
 # ============================================================================
 
-PROJECT_DIR="/Users/ethan/ABA_Trends"
+PROJECT_DIR="/Users/haiyi/Desktop/project/about-sif-main"
 GRANULARITY="${1:-week}"
 
 # ============================================================================
@@ -30,8 +30,10 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-# 选择 python3：优先 homebrew，其次系统
-if [[ -x "/opt/homebrew/bin/python3" ]]; then
+# 选择 python：优先项目 .venv（依赖齐全），其次 homebrew，再系统
+if [[ -x "$PROJECT_DIR/.venv/bin/python" ]]; then
+    PYTHON="$PROJECT_DIR/.venv/bin/python"
+elif [[ -x "/opt/homebrew/bin/python3" ]]; then
     PYTHON="/opt/homebrew/bin/python3"
 elif [[ -x "/usr/local/bin/python3" ]]; then
     PYTHON="/usr/local/bin/python3"

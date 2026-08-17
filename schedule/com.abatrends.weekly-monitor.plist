@@ -3,7 +3,7 @@
   ABA 排名监控 · 每周三 14:00 触发
 
   此 plist 通过 schedule/run_monitor.sh 间接调用 monitor.py，
-  避免 launchd 默认 PATH 极简导致找不到 python3 的问题。
+  避免 launchd 默认 PATH 极简导致找不到 python 的问题。
 
   ── 部署步骤（在新 Mac 上）────────────────────────────────────
   1. 修改 schedule/run_monitor.sh 里的 PROJECT_DIR 指向新机器的项目路径
@@ -34,12 +34,12 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/ethan/ABA_Trends/schedule/run_monitor.sh</string>
+        <string>/Users/haiyi/Desktop/project/about-sif-main/schedule/run_monitor.sh</string>
         <string>week</string>
     </array>
 
     <key>WorkingDirectory</key>
-    <string>/Users/ethan/ABA_Trends</string>
+    <string>/Users/haiyi/Desktop/project/about-sif-main</string>
 
     <key>StartCalendarInterval</key>
     <dict>
@@ -55,9 +55,9 @@
     <false/>
 
     <key>StandardOutPath</key>
-    <string>/Users/ethan/Library/Logs/aba-trends/monitor.out.log</string>
+    <string>/Users/haiyi/Library/Logs/aba-trends/monitor.out.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/ethan/Library/Logs/aba-trends/monitor.err.log</string>
+    <string>/Users/haiyi/Library/Logs/aba-trends/monitor.err.log</string>
 </dict>
 </plist>
