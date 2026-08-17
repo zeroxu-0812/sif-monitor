@@ -325,7 +325,7 @@ def _login_and_cache() -> tuple[requests.Session, str | None]:
 def _refresh_session_auth(session: requests.Session) -> None:
     refreshed, _ = _login_and_cache()
     session.cookies.clear()
-    session.cookies.update(refreshed.cookies.get_dict())
+    session.cookies.update(refreshed.cookies)
 
 
 def _needs_auth_retry(resp: requests.Response) -> bool:
@@ -376,7 +376,7 @@ def get_default_headers() -> dict:
     return headers
 
 
-def api_get(session: requests.Session, path: str, params: dict = None) -> requests.Response:
+def api_get(session: requests.Session, path: str, params: dict | None = None) -> requests.Response:
     """GET 请求 SIF API，自动加上默认 headers"""
     url = _build_url(path)
     merged_params = build_sif_query_params(extra_params=params or {})
@@ -391,8 +391,8 @@ def api_get(session: requests.Session, path: str, params: dict = None) -> reques
 def api_post(
     session: requests.Session,
     path: str,
-    json_data: dict = None,
-    params: dict = None,
+    json_data: dict | None = None,
+    params: dict | None = None,
     timeout: int = 10,
 ) -> requests.Response:
     """POST 请求 SIF API，自动加上默认 headers"""

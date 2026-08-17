@@ -21,9 +21,9 @@ APP_DIR = Path(__file__).resolve().parent
 STATIC_DIR = APP_DIR / "static"
 sys.path.insert(0, str(PROJECT_DIR))
 
-import auth  # noqa: E402
-import requests  # noqa: E402
+import requests
 
+import auth
 
 SIF_TRENDS_URL = "https://new.sif.com/api/search/compare/estSearchesNumHistory"
 MAX_KEYWORDS_PER_BATCH = 10

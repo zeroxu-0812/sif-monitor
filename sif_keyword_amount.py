@@ -218,7 +218,7 @@ def collect_columns(records):
 
     # 补所有 record 出现过、但不在 priority 里的字段（imgs 单独处理）
     for rec in records:
-        for k in rec.keys():
+        for k in rec:
             if k in ("imgs",):
                 continue
             if k not in seen:

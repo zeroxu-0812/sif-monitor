@@ -211,7 +211,7 @@ def collect_columns(records):
 
     # 再补所有 record 出现过、但不在 priority 里的字段（含 cpc/cpa/acos 等 JSON 原始列；除 topAsins 单独处理）
     for rec in records:
-        for k in rec.keys():
+        for k in rec:
             if k in ("topAsins",):
                 continue
             if k not in seen:
@@ -547,11 +547,11 @@ def main(argv=None):
 
         # 推送到飞书 spreadsheet + 群链接（--push-feishu）
         if args.push_feishu:
-            from feishu_report import build_funnel_link_card, publish_funnel_to_sheet
-            from feishu_messenger import FeishuMessenger
-            from sif_feishu_sync import FeishuClient
             import feishu_config
             import monitor_config as mcfg
+            from feishu_messenger import FeishuMessenger
+            from feishu_report import build_funnel_link_card, publish_funnel_to_sheet
+            from sif_feishu_sync import FeishuClient
 
             feishu_client = FeishuClient(
                 feishu_config.FEISHU_APP_ID, feishu_config.FEISHU_APP_SECRET

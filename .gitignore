@@ -25,6 +25,9 @@ sif_sync_checkpoint.json
 # Claude Code 工作目录（含本地计划/记忆）
 .claude/
 
+# AI agent 工具 skill 配置（openspec/opsx，工具生成，不入仓库）
+.agents/
+
 # 项目内 todo / 经验记录（开发过程产物，不入仓库）
 todo.md
 lessons.md

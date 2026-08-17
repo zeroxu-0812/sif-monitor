@@ -2,3 +2,17 @@
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+ignore = [
+    "BLE001",  # 顶层兜底 catch Exception（告警尽力而为 / CLI 兜底）是有意设计
+    "DTZ005",  # 本地 launchd 调度，datetime.now() 用本地时间是有意的
+    "DTZ007",  # 解析 Sif 返回的无时区日期字符串
+    "EXE001",  # 脚本统一通过 `python xxx.py` 调用，不依赖 shebang 执行位
+]
+
+[tool.mypy]
+ignore_missing_imports = true

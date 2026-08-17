@@ -17,7 +17,6 @@ from rank_metrics import (
     tier_of,
 )
 
-
 # 与 monitor_config.TIERS 同结构，但 top_n 改小以便测截断
 TIERS = [
     ("T1", 1, 3000, 2),

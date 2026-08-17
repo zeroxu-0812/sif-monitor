@@ -37,12 +37,11 @@ from lark_oapi.api.im.v1 import (
     ReplyMessageRequestBody,
 )
 
-import auth  # noqa: F401  副作用：加载 .env
+import auth
 import feishu_config
 from feishu_report import publish_funnel_to_sheet
 from sif_feishu_sync import FeishuClient
 from sif_keyword_funnel import fetch_keyword_funnel
-
 
 # ============================================================================
 # lark API client（发消息用，与 ws.Client 分离——ws.Client 只收不发）
@@ -247,7 +246,7 @@ def _handle_message_receive(data) -> None:
                 sheet_title=report["sheet_title"],
             )
             lark.logger.info(f"完成: product={product!r} sheet={report['sheet_title']}")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             lark.logger.exception("funnel worker 失败")
             _reply_text(msg.message_id, f"❌ 查询「{product}」失败：{exc}")
 

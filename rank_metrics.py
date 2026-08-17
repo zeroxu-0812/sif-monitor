@@ -12,8 +12,7 @@ Python 原生数据结构，便于单测与复用。
 
 from __future__ import annotations
 
-from typing import Iterable
-
+from collections.abc import Iterable
 
 # ============================================================================
 # 档位判定
@@ -78,7 +77,7 @@ def _coerce_rank(value) -> int | None:
     if isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
-        if value != value or value in (float("inf"), float("-inf")):  # NaN / inf
+        if value != value or value in (float("inf"), float("-inf")):  # noqa: PLR0124  NaN/Inf 检测
             return None
         if value <= 0:
             return None
@@ -183,13 +182,13 @@ def _cagr_sort_key(metric: dict) -> tuple:
     """
     cagr = metric.get("cagr")
     curr = metric.get("current_rank")
-    has_cagr = cagr is not None
-    # 用 -cagr 实现降序；用 curr 实现升序
+    # 用 -cagr 实现降序；用 curr 实现升序。cagr 可能为 None（缺失），显式转 float 规避类型歧义
+    cagr_val: float = float(cagr) if cagr is not None else 0.0
     return (
-        0 if has_cagr else 1,            # 有 CAGR 的排前
-        -(cagr if has_cagr else 0.0),    # CAGR 大的排前
+        0 if cagr is not None else 1,            # 有 CAGR 的排前
+        -cagr_val,                               # CAGR 大的排前
         curr if isinstance(curr, int) else 10**9,  # 当前 rank 小的排前
-        metric.get("keyword", ""),       # 关键词字典序稳定排序
+        metric.get("keyword", ""),               # 关键词字典序稳定排序
     )
 
 

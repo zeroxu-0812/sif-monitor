@@ -35,7 +35,6 @@ from rank_metrics import (
 )
 from sif_feishu_sync import FeishuClient
 
-
 PROJECT_DIR = Path(__file__).resolve().parent
 
 

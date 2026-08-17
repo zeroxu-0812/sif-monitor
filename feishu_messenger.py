@@ -10,61 +10,29 @@
 from __future__ import annotations
 
 import json
-import time
 from datetime import datetime
-from typing import Iterable
 
-import requests
-
-from sif_feishu_sync import FeishuClient, request_json
 import monitor_config as cfg
-
+from sif_feishu_sync import FeishuClient, request_json
 
 FEISHU_SEND_MESSAGE_URL = "https://open.feishu.cn/open-apis/im/v1/messages"
-FEISHU_TOKEN_URL = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
-TOKEN_SAFETY_MARGIN_SECONDS = 5 * 60   # 提前 5 分钟刷新
-TOKEN_VALID_SECONDS = 2 * 60 * 60      # 飞书 tenant_access_token 默认 2 小时
 
 
 class FeishuMessenger:
     """
     飞书应用消息发送器。
 
-    与 FeishuClient 平级（独立维护 token），避免修改既有 FeishuClient 的行为。
+    tenant_access_token 复用 FeishuClient（含过期刷新），不再重复实现。
     """
 
     def __init__(self, app_id: str, app_secret: str):
         self.app_id = app_id
         self.app_secret = app_secret
-        self._token: str | None = None
-        self._token_expires_at: float = 0.0
-
-    # ------------------------------------------------------------------
-    # token 管理
-    # ------------------------------------------------------------------
-
-    def _refresh_token(self) -> None:
-        payload = {"app_id": self.app_id, "app_secret": self.app_secret}
-        data = request_json("POST", FEISHU_TOKEN_URL, json=payload, timeout=15)
-        token = data.get("tenant_access_token")
-        if not token:
-            raise RuntimeError(
-                f"飞书 tenant_access_token 获取失败: {data.get('msg') or data}"
-            )
-        expire = int(data.get("expire", TOKEN_VALID_SECONDS))
-        self._token = token
-        # expire 是飞书返回的剩余秒数；留出 safety margin
-        self._token_expires_at = time.time() + max(expire - TOKEN_SAFETY_MARGIN_SECONDS, 60)
-
-    def _get_token(self) -> str:
-        if not self._token or time.time() >= self._token_expires_at:
-            self._refresh_token()
-        assert self._token is not None
-        return self._token
+        self._client = FeishuClient(app_id, app_secret)
 
     def _headers(self) -> dict:
         return {
-            "Authorization": f"Bearer {self._get_token()}",
+            "Authorization": f"Bearer {self._client.get_tenant_access_token()}",
             "Content-Type": "application/json; charset=utf-8",
         }
 

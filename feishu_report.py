@@ -22,7 +22,6 @@ import monitor_config as cfg
 from feishu_messenger import _fmt_pct, _hr, _markdown_div
 from sif_feishu_sync import overwrite_sheet_with_matrix
 
-
 STATE_FILE = Path(__file__).resolve().parent / ".feishu_report_state.json"
 
 REPORT_HEADER = [
@@ -262,7 +261,10 @@ def funnel_records_to_matrix(records):
     飞书单元格不接受 bool 类型（code=90204），需把 bool 转「是/否」；
     flatten_record 已把 dict/list 转 JSON 串，其他非基础类型兜底转 str。
     """
-    from sif_keyword_funnel import collect_columns, flatten_record  # 延迟 import 避免循环
+    from sif_keyword_funnel import (  # 延迟 import 避免循环
+        collect_columns,
+        flatten_record,
+    )
 
     columns = collect_columns(records)
     matrix = [list(columns)]

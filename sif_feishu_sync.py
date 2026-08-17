@@ -24,7 +24,6 @@ import auth
 import feishu_config
 import sif_config
 
-
 SIF_TRENDS_URL = "https://new.sif.com/api/search/compare/estSearchesNumHistory"
 FEISHU_TENANT_TOKEN_URL = (
     "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
@@ -528,7 +527,6 @@ def overwrite_sheet_with_matrix(client, spreadsheet_token, sheet_id, matrix):
     client.add_dimension(spreadsheet_token, sheet_id, "COLUMNS", cols - current_cols)
 
     final_matrix = pad_matrix(matrix, rows, cols)
-    last_col = col_index_to_name(cols - 1)
 
     row_chunk_size = 200
     col_chunk_size = 30
