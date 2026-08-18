@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sif → 飞书 排名数据同步 · 每周三 09:00 触发
+
+  此 plist 通过 schedule/run_sync.sh 间接调用 sif_feishu_sync.py，
+  在排名监控（周三 14:00）之前 5 小时完成数据同步。
+
+  部署：
+    cp schedule/com.abatrends.weekly-sync.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.abatrends.weekly-sync.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.abatrends.weekly-sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/haiyi/Desktop/project/about-sif-main/schedule/run_sync.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/haiyi/Desktop/project/about-sif-main</string>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>3</integer>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/haiyi/Library/Logs/aba-trends/sync.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/haiyi/Library/Logs/aba-trends/sync.err.log</string>
+</dict>
+</plist>

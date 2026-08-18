@@ -276,7 +276,7 @@ rm ~/Library/LaunchAgents/com.abatrends.weekly-monitor.plist
 
 ```bash
 # 同步脚本（每周三 09:00 跑）
-# （参考上面 plist，把 ProgramArguments 改成 sif_feishu_sync.py，时间改 Hour=9）
+# schedule/com.abatrends.weekly-sync.plist
 
 # 监控脚本（每周三 14:00 跑）
 # schedule/com.abatrends.weekly-monitor.plist
